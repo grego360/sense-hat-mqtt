@@ -2,6 +2,15 @@
 
 This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assistant (or any other MQTT broker) to display messages and control the LED matrix remotely.
 
+## Version 1.0.4
+
+### What's New
+
+- Improved message display with automatic clearing
+- Enhanced JSON message parsing with better error handling
+- Added unique client ID for more reliable MQTT connections
+- Better error reporting and handling
+
 ## Prerequisites
 
 - Raspberry Pi with Sense HAT V2 attached
@@ -11,13 +20,15 @@ This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assista
 ## Installation
 
 1. Clone this repository to your Raspberry Pi:
-   ```
+
+   ```bash
    git clone https://github.com/yourusername/sense-hat-mqtt.git
    cd sense-hat-mqtt
    ```
 
 2. Install the dependencies:
-   ```
+
+   ```bash
    npm install
    ```
 
@@ -31,15 +42,18 @@ const mqttConfig = {
     host: '10.1.3.200',        // Your MQTT broker IP
     port: 1883,                // Default MQTT port
     username: 'mqtt',          // Your MQTT username
-    password: 'm1q2t3t4!',     // Your MQTT password
+    password: 'mqtt123',       // Your MQTT password
 };
+
+// The client ID is automatically generated for uniqueness
+// clientId: 'rpi-sense-hat-' + Math.random().toString(16).substring(2, 8)
 ```
 
 ## Running the Application
 
 Start the application:
 
-```
+```bash
 npm start
 ```
 
@@ -91,7 +105,7 @@ mqtt:
   broker: 10.1.3.200  # Your MQTT broker IP
   port: 1883
   username: mqtt
-  password: m1q2t3t4!
+  password: mqtt123
 
 input_text:
   sensehat_message:
@@ -109,6 +123,63 @@ automation:
         topic: "home/sensehat/message"
         payload_template: '{"message": "{{ states.input_text.sensehat_message.state }}"}'
 ```
+
+## Running as a Service
+
+To run the application as a systemd service that starts automatically on boot:
+
+1. Create a systemd service file:
+   ```bash
+   sudo nano /etc/systemd/system/sense-hat-mqtt.service
+   ```
+
+2. Add the following content (adjust paths if needed):
+
+   ```ini
+   [Unit]
+   Description=Sense HAT MQTT Client
+   After=network.target
+
+   [Service]
+   ExecStart=/usr/bin/node /home/strot/sense-hat-mqtt/app.js
+   WorkingDirectory=/home/strot/sense-hat-mqtt
+   StandardOutput=inherit
+   StandardError=inherit
+   Restart=always
+   User=strot
+
+   [Install]
+   WantedBy=multi-user.target
+   ```
+
+3. Enable and start the service:
+
+   ```bash
+   sudo systemctl enable sense-hat-mqtt.service
+   sudo systemctl start sense-hat-mqtt.service
+   ```
+
+4. Check the status:
+
+   ```bash
+   sudo systemctl status sense-hat-mqtt.service
+   ```
+
+## Troubleshooting
+
+- **Permission issues**: Add your user to the required groups:
+
+  ```bash
+  sudo usermod -a -G i2c,gpio,spi strot
+  ```
+
+- **MQTT connection errors**: Verify your MQTT broker credentials and ensure the broker is running
+
+- **Service logs**: Check the application logs if you encounter issues:
+
+  ```bash
+  sudo journalctl -u sense-hat-mqtt.service
+  ```
 
 ## License
 

@@ -72,12 +72,11 @@ client.on('message', (topic, message) => {
                 // Show message with specified color if available
                 const textColor = data.color && Array.isArray(data.color) && data.color.length === 3
                     ? data.color : [255, 255, 255]; // Default to white
-                senseHat.showMessage(data.message, 0.1, textColor);
+                const backColor = [0, 0, 0]; // Black background
 
-                // Clear after a delay
-                setTimeout(() => {
-                    senseHat.clear();
-                }, data.message.length * 500); // Adjust timing based on message length
+                // Use flashMessage instead of showMessage
+                // flashMessage automatically clears the display after showing the message
+                senseHat.flashMessage(data.message, 0.1, textColor, backColor);
             }
 
             // Handle color change (separate from message)
