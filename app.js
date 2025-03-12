@@ -1,6 +1,8 @@
 const mqtt = require('mqtt');
 const senseHat = require('sense-hat-led');
 const { exec } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 // ===== Helper Functions =====
 
@@ -24,29 +26,49 @@ function scheduleClear(delay) {
 }
 
 // Function to play sounds through the HDMI audio
-// function playSound(soundType) {
-//     let command;
+function playSound(soundType) {
+    // Base directory for sound files
+    const soundDir = path.join(__dirname, 'sounds');
+    let soundFile;
 
-//     switch (soundType) {
-//         case 'connect':
-//             command = 'aplay /usr/share/sounds/alsa/Front_Center.wav';
-//             break;
-//         case 'message':
-//             command = 'aplay /usr/share/sounds/alsa/Front_Right.wav';
-//             break;
-//         case 'error':
-//             command = 'aplay /usr/share/sounds/alsa/Front_Left.wav';
-//             break;
-//         default:
-//             command = 'aplay /usr/share/sounds/alsa/Noise.wav';
-//     }
+    switch (soundType) {
+        case 'connect':
+            soundFile = 'success.wav';
+            break;
+        case 'message':
+            soundFile = 'notification.wav';
+            break;
+        case 'alert':
+            soundFile = 'alert.wav';
+            break;
+        case 'bell':
+            soundFile = 'bell.wav';
+            break;
+        case 'error':
+            soundFile = 'alert.wav'; // Using alert for error if no specific error sound
+            break;
+        default:
+            soundFile = 'notification.wav'; // Default sound
+    }
 
-//     exec(command, (error) => {
-//         if (error) {
-//             console.error('Error playing sound:', error);
-//         }
-//     });
-// }
+    // Full path to the sound file
+    const fullPath = path.join(soundDir, soundFile);
+
+    // Check if the file exists before trying to play it
+    if (fs.existsSync(fullPath)) {
+        exec(`aplay "${fullPath}"`, (error) => {
+            if (error) {
+                console.error(`Error playing sound ${fullPath}:`, error);
+                // Fall back to system sounds if custom sound fails
+                exec('aplay /usr/share/sounds/alsa/Front_Right.wav');
+            }
+        });
+    } else {
+        console.error(`Sound file not found: ${fullPath}`);
+        // Fall back to system sounds
+        exec('aplay /usr/share/sounds/alsa/Front_Right.wav');
+    }
+}
 
 // Function to speak text
 function speakText(text) {
@@ -55,6 +77,14 @@ function speakText(text) {
         if (error) {
             console.error('Error with text-to-speech:', error);
         }
+    });
+}
+
+// Function to set system volume (0-100)
+function setVolume(level) {
+    const volumeLevel = Math.min(100, Math.max(0, level)); // Ensure between 0-100
+    exec(`amixer set Master ${volumeLevel}%`, (error) => {
+        if (error) console.error('Error setting volume:', error);
     });
 }
 
@@ -101,6 +131,11 @@ function processMessage(data) {
     // Set orientation to ensure proper display
     senseHat.setRotation(0);
 
+    // Handle volume adjustment if specified
+    if (data.volume !== undefined && typeof data.volume === 'number') {
+        setVolume(data.volume);
+    }
+
     // Handle text message
     if (data.message) {
         const textColor = data.color && Array.isArray(data.color) && data.color.length === 3
@@ -109,8 +144,12 @@ function processMessage(data) {
         // Display message
         displayMessage(data.message, textColor);
 
-        // Play notification sound
-        // playSound('message');
+        // Play sound based on message type or specific sound request
+        if (data.sound) {
+            playSound(data.sound); // Use the specific sound requested
+        } else {
+            playSound('message'); // Default notification sound
+        }
 
         // If speech is requested, also speak the message
         if (data.speak) {
@@ -185,7 +224,7 @@ client.on('connect', () => {
     console.log(`Subscribed to topic: ${topic}`);
 
     // Play connection sound
-    // playSound('connect');
+    playSound('connect');
 
     // Display confirmation on the Sense HAT
     displayMessage('Connected!', [0, 255, 0]);
@@ -202,7 +241,7 @@ client.on('message', (topic, message) => {
         console.error('Error processing message:', error);
         console.error('Message was:', message.toString());
 
-        // playSound('error');
+        playSound('error');
         displayMessage('Error', [255, 0, 0]);
     }
 });
@@ -210,7 +249,7 @@ client.on('message', (topic, message) => {
 // Handle error events
 client.on('error', (error) => {
     console.error('MQTT connection error:', error);
-    // playSound('error');
+    playSound('error');
     displayMessage('MQTT Error', [255, 0, 0]);
 });
 
@@ -231,7 +270,7 @@ process.on('SIGINT', () => {
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
     console.error('Uncaught exception:', error);
-    // playSound('error');
+    playSound('error');
     displayMessage('Error', [255, 0, 0]);
 
     // Clear before exiting
