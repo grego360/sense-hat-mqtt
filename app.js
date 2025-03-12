@@ -34,8 +34,11 @@ client.on('connect', () => {
     senseHat.showMessage('Connected!', 0.1, [0, 255, 0]);
 
     // Clear the display after connection message
+    // Define the time for connection message
+    const connectionMessageTime = 2000;
+
     setTimeout(() => {
-        console.log('Clearing display after message completed');
+        console.log('Clearing display after connection message');
         senseHat.clear();
 
         // Explicitly turn off all pixels
@@ -44,7 +47,7 @@ client.on('connect', () => {
             offPixels.push([0, 0, 0]);
         }
         senseHat.setPixels(offPixels);
-    }, scrollTime);
+    }, connectionMessageTime);
 });
 
 // Handle incoming messages
@@ -101,11 +104,26 @@ client.on('message', (topic, message) => {
                     setTimeout(() => {
                         console.log('Clearing display after message completed');
                         senseHat.clear();
+
+                        // Explicitly turn off all pixels
+                        const offPixels = [];
+                        for (let i = 0; i < 64; i++) {
+                            offPixels.push([0, 0, 0]);
+                        }
+                        senseHat.setPixels(offPixels);
                     }, scrollTime);
                 } catch (e) {
                     console.error('Error displaying message:', e);
                     senseHat.showMessage('Error', 0.1, [255, 0, 0]);
-                    setTimeout(() => senseHat.clear(), 1500);
+                    setTimeout(() => {
+                        senseHat.clear();
+                        // Turn off all pixels explicitly
+                        const offPixels = [];
+                        for (let i = 0; i < 64; i++) {
+                            offPixels.push([0, 0, 0]);
+                        }
+                        senseHat.setPixels(offPixels);
+                    }, 1500);
                 }
             }
 
@@ -137,6 +155,12 @@ client.on('message', (topic, message) => {
         // Clear the display after error message
         setTimeout(() => {
             senseHat.clear();
+            // Turn off all pixels explicitly
+            const offPixels = [];
+            for (let i = 0; i < 64; i++) {
+                offPixels.push([0, 0, 0]);
+            }
+            senseHat.setPixels(offPixels);
         }, 1500);
     }
 });
@@ -149,6 +173,12 @@ client.on('error', (error) => {
     // Clear the display after error message
     setTimeout(() => {
         senseHat.clear();
+        // Turn off all pixels explicitly
+        const offPixels = [];
+        for (let i = 0; i < 64; i++) {
+            offPixels.push([0, 0, 0]);
+        }
+        senseHat.setPixels(offPixels);
     }, 2000);
 });
 
@@ -160,6 +190,12 @@ client.on('close', () => {
     // Clear the display after disconnection message
     setTimeout(() => {
         senseHat.clear();
+        // Turn off all pixels explicitly
+        const offPixels = [];
+        for (let i = 0; i < 64; i++) {
+            offPixels.push([0, 0, 0]);
+        }
+        senseHat.setPixels(offPixels);
     }, 2000);
 });
 
@@ -167,6 +203,12 @@ client.on('close', () => {
 process.on('SIGINT', () => {
     console.log('Shutting down...');
     senseHat.clear();
+    // Turn off all pixels explicitly
+    const offPixels = [];
+    for (let i = 0; i < 64; i++) {
+        offPixels.push([0, 0, 0]);
+    }
+    senseHat.setPixels(offPixels);
     client.end();
     process.exit(0);
 });
@@ -178,6 +220,12 @@ process.on('uncaughtException', (error) => {
 
     // Clear before exiting
     senseHat.clear();
+    // Turn off all pixels explicitly
+    const offPixels = [];
+    for (let i = 0; i < 64; i++) {
+        offPixels.push([0, 0, 0]);
+    }
+    senseHat.setPixels(offPixels);
     client.end();
     process.exit(1);
 });
