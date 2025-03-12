@@ -65,6 +65,11 @@ client.on('message', (topic, message) => {
             if (data.message) {
                 console.log(`Displaying message: ${data.message}`);
                 senseHat.showMessage(data.message, 0.1);
+
+                // Add a small delay and then clear the display
+                setTimeout(() => {
+                    senseHat.clear();
+                }, 500); // 500ms delay after message completes
             }
 
             // Handle color change
