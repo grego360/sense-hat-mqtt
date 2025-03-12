@@ -32,6 +32,11 @@ client.on('connect', () => {
 
     // Display confirmation on the Sense HAT
     senseHat.showMessage('Connected!', 0.1, [0, 255, 0]);
+
+    // Clear the display after connection message
+    setTimeout(() => {
+        senseHat.clear();
+    }, 2000);
 });
 
 // Handle incoming messages
@@ -67,17 +72,33 @@ client.on('message', (topic, message) => {
             // Handle text message
             if (data.message) {
                 console.log(`Displaying message: ${data.message}`);
+
                 // Clear display first
                 senseHat.clear();
+
+                // Calculate a reasonable scroll time based on message length
+                const scrollTime = data.message.length * 110 + 2000;
+
                 // Show message with specified color if available
                 const textColor = data.color && Array.isArray(data.color) && data.color.length === 3
                     ? data.color : [255, 255, 255]; // Default to white
-                senseHat.showMessage(data.message, 0.1, textColor);
 
-                // Clear after a delay
-                setTimeout(() => {
-                    senseHat.clear();
-                }, data.message.length * 500); // Adjust timing based on message length
+                // Using the low-level API approach
+                try {
+                    // Show the message
+                    senseHat.showMessage(data.message, 0.1, textColor);
+
+                    // Clear the display after the calculated scroll time
+                    console.log(`Setting timer to clear display after ${scrollTime}ms`);
+                    setTimeout(() => {
+                        console.log('Clearing display after message completed');
+                        senseHat.clear();
+                    }, scrollTime);
+                } catch (e) {
+                    console.error('Error displaying message:', e);
+                    senseHat.showMessage('Error', 0.1, [255, 0, 0]);
+                    setTimeout(() => senseHat.clear(), 1500);
+                }
             }
 
             // Handle color change (separate from message)
@@ -104,6 +125,11 @@ client.on('message', (topic, message) => {
         console.error('Error processing message:', error);
         console.error('Message was:', message.toString());
         senseHat.showMessage('Error', 0.1, [255, 0, 0]);
+
+        // Clear the display after error message
+        setTimeout(() => {
+            senseHat.clear();
+        }, 1500);
     }
 });
 
@@ -111,12 +137,22 @@ client.on('message', (topic, message) => {
 client.on('error', (error) => {
     console.error('MQTT connection error:', error);
     senseHat.showMessage('MQTT Error', 0.1, [255, 0, 0]);
+
+    // Clear the display after error message
+    setTimeout(() => {
+        senseHat.clear();
+    }, 2000);
 });
 
 // Handle disconnection
 client.on('close', () => {
     console.log('Disconnected from MQTT broker');
     senseHat.showMessage('Disconnected', 0.1, [255, 165, 0]);
+
+    // Clear the display after disconnection message
+    setTimeout(() => {
+        senseHat.clear();
+    }, 2000);
 });
 
 // Handle process termination
@@ -131,6 +167,8 @@ process.on('SIGINT', () => {
 process.on('uncaughtException', (error) => {
     console.error('Uncaught exception:', error);
     senseHat.showMessage('Error', 0.1, [255, 0, 0]);
+
+    // Clear before exiting
     senseHat.clear();
     client.end();
     process.exit(1);
