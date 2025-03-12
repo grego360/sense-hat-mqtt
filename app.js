@@ -24,29 +24,29 @@ function scheduleClear(delay) {
 }
 
 // Function to play sounds through the HDMI audio
-function playSound(soundType) {
-    let command;
+// function playSound(soundType) {
+//     let command;
 
-    switch (soundType) {
-        case 'connect':
-            command = 'aplay /usr/share/sounds/alsa/Front_Center.wav';
-            break;
-        case 'message':
-            command = 'aplay /usr/share/sounds/alsa/Front_Right.wav';
-            break;
-        case 'error':
-            command = 'aplay /usr/share/sounds/alsa/Front_Left.wav';
-            break;
-        default:
-            command = 'aplay /usr/share/sounds/alsa/Noise.wav';
-    }
+//     switch (soundType) {
+//         case 'connect':
+//             command = 'aplay /usr/share/sounds/alsa/Front_Center.wav';
+//             break;
+//         case 'message':
+//             command = 'aplay /usr/share/sounds/alsa/Front_Right.wav';
+//             break;
+//         case 'error':
+//             command = 'aplay /usr/share/sounds/alsa/Front_Left.wav';
+//             break;
+//         default:
+//             command = 'aplay /usr/share/sounds/alsa/Noise.wav';
+//     }
 
-    exec(command, (error) => {
-        if (error) {
-            console.error('Error playing sound:', error);
-        }
-    });
-}
+//     exec(command, (error) => {
+//         if (error) {
+//             console.error('Error playing sound:', error);
+//         }
+//     });
+// }
 
 // Function to speak text
 function speakText(text) {
