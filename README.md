@@ -2,10 +2,11 @@
 
 This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assistant (or any other MQTT broker) to display messages and control the LED matrix remotely.
 
-## Version 1.0.4
+## Version 1.0.6
 
 ### What's New
 
+- Added text-to-speech functionality with Festival engine
 - Improved message display with automatic clearing
 - Enhanced JSON message parsing with better error handling
 - Added unique client ID for more reliable MQTT connections
@@ -16,6 +17,7 @@ This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assista
 - Raspberry Pi with Sense HAT V2 attached
 - Node.js installed on your Raspberry Pi
 - MQTT broker (such as Home Assistant or Mosquitto)
+- Festival text-to-speech engine (for speech functionality)
 
 ## Installation
 
@@ -30,6 +32,13 @@ This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assista
 
    ```bash
    npm install
+   ```
+
+3. Install Festival text-to-speech engine (for speech functionality):
+
+   ```bash
+   sudo apt-get update
+   sudo apt-get install festival
    ```
 
 ## Configuration
@@ -70,6 +79,17 @@ Send messages to the `home/sensehat/message` topic in JSON format:
   "message": "Hello World!"
 }
 ```
+
+### Text with Speech
+
+```json
+{
+  "message": "Hello World!",
+  "speak": true
+}
+```
+
+When the `speak` parameter is set to `true`, the message will be spoken aloud using the Festival text-to-speech engine.
 
 ### Change Background Color
 
