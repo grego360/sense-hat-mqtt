@@ -1,6 +1,6 @@
 {
   "name": "sense-hat-mqtt",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MQTT client for Raspberry Pi Sense HAT V2",
   "main": "app.js",
   "scripts": {

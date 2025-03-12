@@ -6,16 +6,17 @@ senseHat.clear();
 
 // MQTT connection configuration
 const mqttConfig = {
-    host: '10.1.3.200',        // Your Home Assistant IP
-    port: 1883,                // Default MQTT port
-    username: 'mqtt', // Your MQTT username
-    password: 'm1q2t3t4!', // Your MQTT password
+    host: '10.1.3.200',
+    port: 1883,
+    username: 'mqtt',
+    password: 'mqtt123'
 };
 
 // Connect to the MQTT broker
 const client = mqtt.connect(`mqtt://${mqttConfig.host}:${mqttConfig.port}`, {
     username: mqttConfig.username,
     password: mqttConfig.password,
+    clientId: 'rpi-sense-hat-' + Math.random().toString(16).substring(2, 8)
 });
 
 console.log('Attempting to connect to MQTT broker...');
@@ -38,29 +39,50 @@ client.on('message', (topic, message) => {
     console.log(`Received message on topic ${topic}: ${message.toString()}`);
 
     try {
-        // Parse the JSON message
-        const data = JSON.parse(message.toString());
+        // Clean up the message string - remove ALL extra quotes
+        let messageStr = message.toString().trim();
 
-        // Handle text message
-        if (data.message) {
-            console.log(`Displaying message: ${data.message}`);
-            senseHat.showMessage(data.message, 0.1);
+        // If it starts with a quote (single or double), try to find matching end quote
+        if ((messageStr.startsWith("'") && messageStr.endsWith("'")) ||
+            (messageStr.startsWith('"') && messageStr.endsWith('"'))) {
+            messageStr = messageStr.substring(1, messageStr.length - 1);
         }
 
-        // Handle color change
-        if (data.color && Array.isArray(data.color) && data.color.length === 3) {
-            const [r, g, b] = data.color;
-            console.log(`Setting background color to RGB(${r}, ${g}, ${b})`);
-            senseHat.clear([r, g, b]);
+        // Handle case where JSON might still be escaped within quotes
+        try {
+            // Try parsing as is first
+            const data = JSON.parse(messageStr);
+            processMessage(data);
+        } catch (innerError) {
+            // If that fails, it might be a string representation of JSON
+            const unescaped = messageStr.replace(/\\"/g, '"');
+            const data = JSON.parse(unescaped);
+            processMessage(data);
         }
 
-        // Handle patterns (optional feature)
-        if (data.pattern && Array.isArray(data.pattern)) {
-            console.log('Displaying custom pattern');
-            senseHat.setPixels(data.pattern);
+        function processMessage(data) {
+            // Handle text message
+            if (data.message) {
+                console.log(`Displaying message: ${data.message}`);
+                senseHat.showMessage(data.message, 0.1);
+            }
+
+            // Handle color change
+            if (data.color && Array.isArray(data.color) && data.color.length === 3) {
+                const [r, g, b] = data.color;
+                console.log(`Setting background color to RGB(${r}, ${g}, ${b})`);
+                senseHat.clear([r, g, b]);
+            }
+
+            // Handle patterns (optional feature)
+            if (data.pattern && Array.isArray(data.pattern)) {
+                console.log('Displaying custom pattern');
+                senseHat.setPixels(data.pattern);
+            }
         }
     } catch (error) {
         console.error('Error processing message:', error);
+        console.error('Message was:', message.toString());
         senseHat.showMessage('Error', 0.1, [255, 0, 0]);
     }
 });
