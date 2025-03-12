@@ -35,8 +35,16 @@ client.on('connect', () => {
 
     // Clear the display after connection message
     setTimeout(() => {
+        console.log('Clearing display after message completed');
         senseHat.clear();
-    }, 2000);
+
+        // Explicitly turn off all pixels
+        const offPixels = [];
+        for (let i = 0; i < 64; i++) {
+            offPixels.push([0, 0, 0]);
+        }
+        senseHat.setPixels(offPixels);
+    }, scrollTime);
 });
 
 // Handle incoming messages
