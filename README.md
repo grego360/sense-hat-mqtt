@@ -6,6 +6,9 @@ This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assista
 
 ### What's New
 
+- Added support for custom display rotation (0, 90, 180, 270 degrees)
+- Added custom sound support with fallback to system sounds
+- Added volume control functionality
 - Added text-to-speech functionality with Festival engine
 - Improved message display with automatic clearing
 - Enhanced JSON message parsing with better error handling
@@ -90,6 +93,38 @@ Send messages to the `home/sensehat/message` topic in JSON format:
 ```
 
 When the `speak` parameter is set to `true`, the message will be spoken aloud using the Festival text-to-speech engine.
+
+### Text with Custom Rotation
+
+```json
+{
+  "message": "Hello World!",
+  "rotation": 90
+}
+```
+
+The `rotation` parameter accepts values of 0, 90, 180, or 270 degrees to control the orientation of the display.
+
+### Custom Sound
+
+```json
+{
+  "message": "Hello World!",
+  "sound": "bell"
+}
+```
+
+The `sound` parameter accepts values: "connect", "message", "alert", "bell", or "error".
+
+### Volume Control
+
+```json
+{
+  "volume": 75
+}
+```
+
+The `volume` parameter accepts values from 0-100 to set the system volume level.
 
 ### Change Background Color
 

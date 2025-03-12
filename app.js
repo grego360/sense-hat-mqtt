@@ -128,8 +128,13 @@ function setBackgroundColor(color) {
 
 // Function to process MQTT messages
 function processMessage(data) {
-    // Set orientation to ensure proper display
-    senseHat.setRotation(0);
+    // Set orientation based on rotation parameter or default to 0
+    // Valid rotations are 0, 90, 180, 270
+    const rotation = data.rotation !== undefined ?
+        (data.rotation === 90 || data.rotation === 180 || data.rotation === 270 ? data.rotation : 0) : 180;
+
+    console.log(`Setting display rotation to ${rotation} degrees`);
+    senseHat.setRotation(rotation);
 
     // Handle volume adjustment if specified
     if (data.volume !== undefined && typeof data.volume === 'number') {
