@@ -110,7 +110,7 @@ function processMessage(data) {
         displayMessage(data.message, textColor);
 
         // Play notification sound
-        playSound('message');
+        // playSound('message');
 
         // If speech is requested, also speak the message
         if (data.speak) {
@@ -185,7 +185,7 @@ client.on('connect', () => {
     console.log(`Subscribed to topic: ${topic}`);
 
     // Play connection sound
-    playSound('connect');
+    // playSound('connect');
 
     // Display confirmation on the Sense HAT
     displayMessage('Connected!', [0, 255, 0]);
@@ -202,7 +202,7 @@ client.on('message', (topic, message) => {
         console.error('Error processing message:', error);
         console.error('Message was:', message.toString());
 
-        playSound('error');
+        // playSound('error');
         displayMessage('Error', [255, 0, 0]);
     }
 });
@@ -210,7 +210,7 @@ client.on('message', (topic, message) => {
 // Handle error events
 client.on('error', (error) => {
     console.error('MQTT connection error:', error);
-    playSound('error');
+    // playSound('error');
     displayMessage('MQTT Error', [255, 0, 0]);
 });
 
@@ -231,7 +231,7 @@ process.on('SIGINT', () => {
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
     console.error('Uncaught exception:', error);
-    playSound('error');
+    // playSound('error');
     displayMessage('Error', [255, 0, 0]);
 
     // Clear before exiting
