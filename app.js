@@ -61,22 +61,36 @@ client.on('message', (topic, message) => {
         }
 
         function processMessage(data) {
+            // Set orientation to ensure proper display
+            senseHat.setRotation(0); // Try different values if needed
+
             // Handle text message
             if (data.message) {
                 console.log(`Displaying message: ${data.message}`);
-                senseHat.showMessage(data.message, 0.1);
+                // Clear display first
+                senseHat.clear();
+                // Show message with specified color if available
+                const textColor = data.color && Array.isArray(data.color) && data.color.length === 3
+                    ? data.color : [255, 255, 255]; // Default to white
+                senseHat.showMessage(data.message, 0.1, textColor);
 
-                // Add a small delay and then clear the display
+                // Clear after a delay
                 setTimeout(() => {
                     senseHat.clear();
-                }, 500); // 500ms delay after message completes
+                }, data.message.length * 500); // Adjust timing based on message length
             }
 
-            // Handle color change
-            if (data.color && Array.isArray(data.color) && data.color.length === 3) {
+            // Handle color change (separate from message)
+            if (data.color && Array.isArray(data.color) && data.color.length === 3 && !data.message) {
                 const [r, g, b] = data.color;
                 console.log(`Setting background color to RGB(${r}, ${g}, ${b})`);
-                senseHat.clear([r, g, b]);
+
+                // Fill the entire display with the color
+                const pixels = [];
+                for (let i = 0; i < 64; i++) {
+                    pixels.push([r, g, b]);
+                }
+                senseHat.setPixels(pixels);
             }
 
             // Handle patterns (optional feature)
@@ -85,6 +99,7 @@ client.on('message', (topic, message) => {
                 senseHat.setPixels(data.pattern);
             }
         }
+
     } catch (error) {
         console.error('Error processing message:', error);
         console.error('Message was:', message.toString());
