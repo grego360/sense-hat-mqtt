@@ -1,0 +1,14 @@
+{
+  "name": "sense-hat-mqtt",
+  "version": "1.0.0",
+  "description": "MQTT client for Raspberry Pi Sense HAT V2",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "mqtt": "^5.3.0",
+    "sense-hat-led": "^1.2.0"
+  }
+}
