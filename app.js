@@ -15,8 +15,7 @@ const mqttClient = require('./lib/mqtt-client').createClient({
     audio
 });
 
-console.log('Starting Python joystick monitor...');
-const joystickProcess = spawn('python3', ['joystick_monitor.py']);
+// Joystick monitoring is now handled in the sensors module
 
 // Test MQTT publishing function
 function testMqttPublish() {
@@ -76,144 +75,22 @@ if (display.senseHat) {
     console.log('- on method:', typeof display.senseHat.on === 'function');
 }
 
-// Set up joystick events if supported by the Sense HAT library
-try {
-    console.log('Setting up joystick event handling...');
+// Joystick events are now handled in the sensors module
 
-    // Approach 1: Try using display.on method
-    if (typeof display.on === 'function') {
-        display.on('joystick', (event) => {
-            console.log('Joystick event detected (approach 1):', event);
-            publishJoystickEvent(event);
-        });
-        console.log('Joystick event handler registered using display.on');
-    }
-    // Approach 2: Try using display.senseHat.on method if available
-    else if (display.senseHat && typeof display.senseHat.on === 'function') {
-        display.senseHat.on('joystick', (event) => {
-            console.log('Joystick event detected (approach 2):', event);
-            publishJoystickEvent(event);
-        });
-        console.log('Joystick event handler registered using display.senseHat.on');
-    }
-    // Approach 3: Set up polling for joystick if other methods aren't available
-    else {
-        console.log('No event-based joystick support found, setting up polling...');
+// Joystick event publishing is now handled in the sensors module
 
-        const pollMethod = display.getJoystick ||
-            (display.senseHat && display.senseHat.getJoystick);
-
-        if (typeof pollMethod === 'function') {
-            console.log('Setting up joystick polling');
-            const joystickInterval = setInterval(() => {
-                try {
-                    const joystick = pollMethod.call(display.senseHat || display);
-                    if (joystick && joystick.isPressed) {
-                        const event = {
-                            action: 'press',
-                            direction: joystick.direction || 'middle',
-                            timestamp: new Date().toISOString()
-                        };
-                        console.log('Joystick event detected (polling):', event);
-                        publishJoystickEvent(event);
-                    }
-                } catch (err) {
-                    console.error('Error polling joystick:', err);
-                }
-            }, 100); // Poll every 100ms
-        } else {
-            console.log('WARNING: No supported joystick methods found');
-        }
-    }
-} catch (error) {
-    console.error('Error setting up joystick events:', error);
-}
-
-// Function to publish joystick events to MQTT
-function publishJoystickEvent(event) {
-    const eventData = {
-        action: event.action,
-        direction: event.direction,
-        timestamp: new Date().toISOString()
-    };
-
-    console.log('Publishing joystick event:', eventData);
-    mqttClient.publish(config.mqtt.topics.joystick, JSON.stringify(eventData));
-
-    // Flash the display to provide visual feedback
-    try {
-        // Get current pixels if supported
-        let currentPixels = null;
-        try {
-            if (typeof display.getPixels === 'function') {
-                currentPixels = display.getPixels();
-            }
-        } catch (err) {
-            console.log('Could not get current pixels:', err.message);
-        }
-
-        // Flash green
-        if (typeof display.setBackgroundColor === 'function') {
-            display.setBackgroundColor([0, 255, 0]);
-        } else if (typeof display.clear === 'function') {
-            display.clear([0, 255, 0]);
-        }
-
-        // Restore previous state
-        setTimeout(() => {
-            if (currentPixels && typeof display.setPixels === 'function') {
-                display.setPixels(currentPixels);
-            } else if (typeof display.clearDisplay === 'function') {
-                display.clearDisplay();
-            } else if (typeof display.clear === 'function') {
-                display.clear();
-            }
-        }, 200);
-    } catch (err) {
-        console.error('Error providing visual feedback:', err);
-    }
-}
-
-// Modify the joystick event handling part:
-joystickProcess.stdout.on('data', (data) => {
-    const outputLines = data.toString().trim().split('\n');
-
-    outputLines.forEach(line => {
-        try {
-            // Skip non-JSON lines like "Joystick monitor started"
-            if (!line.startsWith('{')) {
-                console.log('Python output:', line);
-                return;
-            }
-
-            // Parse the JSON
-            const event = JSON.parse(line);
-
-            // Only process actual event data
-            if (event.action && event.direction) {
-                console.log('Joystick event from Python:', event);
-
-                // Publish to MQTT
-                mqttClient.publish(config.mqtt.topics.joystick, JSON.stringify(event));
-
-                // Flash the display
-                if (typeof display.setBackgroundColor === 'function') {
-                    display.setBackgroundColor([0, 255, 0]);
-                    setTimeout(() => display.clearDisplay(), 200);
-                }
-            }
-        } catch (err) {
-            console.log('Error processing Python output:', err.message);
-            console.log('Raw output:', line);
-        }
-    });
-});
+// Joystick event handling is now centralized in the sensors module
 
 // Handle process termination
 process.on('SIGINT', () => {
     console.log('Shutting down...');
-    if (sensors && typeof sensors.stopPublishing === 'function') {
-        sensors.stopPublishing();
+    if (sensors) {
+        if (typeof sensors.stopPublishing === 'function') {
+            sensors.stopPublishing();
+        }
+        if (typeof sensors.stopJoystickMonitoring === 'function') {
+            sensors.stopJoystickMonitoring();
+        }
     }
     display.clearDisplay();
     mqttClient.end();
