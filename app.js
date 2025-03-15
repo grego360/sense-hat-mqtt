@@ -14,20 +14,37 @@ const mqttClient = require('./lib/mqtt-client').createClient({
 });
 
 // Initialize sensors after MQTT client is created
-const sensors = require('./lib/sensor').init(display, mqttClient);
+const sensors = require('./lib/sensors').init(display, mqttClient);
 
 // Set up joystick events if supported by the Sense HAT library
-if (typeof display.on === 'function') {
-    display.on('joystick', (event) => {
-        console.log('Joystick event:', event);
+try {
+    console.log('Setting up joystick event handling...');
 
-        // Publish joystick event to MQTT
-        mqttClient.publish(config.mqtt.topics.joystick, JSON.stringify({
-            action: event.action,
-            direction: event.direction,
-            timestamp: new Date().toISOString()
-        }));
-    });
+    // Check if the joystick event handler is supported
+    if (typeof display.on === 'function') {
+        display.on('joystick', (event) => {
+            console.log('Joystick event detected:', event);
+
+            // Publish joystick event to MQTT
+            mqttClient.publish(config.mqtt.topics.joystick, JSON.stringify({
+                action: event.action,
+                direction: event.direction,
+                timestamp: new Date().toISOString()
+            }));
+
+            // Optional: Flash the display to provide feedback
+            const currentPixels = display.getPixels();
+            display.setBackgroundColor([0, 255, 0]);  // Flash green
+            setTimeout(() => {
+                display.setPixels(currentPixels);      // Restore previous display
+            }, 200);
+        });
+        console.log('Joystick event handler registered');
+    } else {
+        console.log('Joystick event handling not supported by this Sense HAT library');
+    }
+} catch (error) {
+    console.error('Error setting up joystick events:', error);
 }
 
 // Handle process termination

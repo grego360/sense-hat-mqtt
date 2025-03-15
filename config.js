@@ -25,6 +25,7 @@ module.exports = {
         soundsDir: './sounds'
     },
     sensors: {
-        publishInterval: 30000  // 30 seconds
+        publishInterval: 30000,  // Every 30 seconds
+        joystickEnabled: true
     }
 };
