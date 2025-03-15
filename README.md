@@ -2,10 +2,11 @@
 
 This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assistant (or any other MQTT broker) to display messages and control the LED matrix remotely.
 
-## Version 1.0.6
+## Version 1.0.7
 
 ### What's New
 
+- Added components to the app structure
 - Added support for custom display rotation (0, 90, 180, 270 degrees)
 - Added custom sound support with fallback to system sounds
 - Added volume control functionality
