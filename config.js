@@ -26,6 +26,7 @@ module.exports = {
     },
     sensors: {
         publishInterval: 30000,  // Every 30 seconds
-        joystickEnabled: true
+        joystickEnabled: true,
+        joystickDebounceTime: 300  // Debounce time in milliseconds to prevent duplicate events
     }
 };

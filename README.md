@@ -95,7 +95,8 @@ module.exports = {
     },
     sensors: {
         publishInterval: 30000, // Publish sensor data every 30 seconds
-        joystickEnabled: true // Enable joystick monitoring
+        joystickEnabled: true, // Enable joystick monitoring
+        joystickDebounceTime: 300 // Debounce time in milliseconds to prevent duplicate events
     }
 };
 ```
@@ -313,6 +314,15 @@ Possible values for `action` are: `pressed`, `released`, `held`
 
 Possible values for `direction` are: `up`, `down`, `left`, `right`, `middle`
 
+### Joystick Debouncing
+
+To prevent duplicate events when a single joystick action occurs, debouncing is implemented at both the Python and Node.js levels:
+
+1. The Python script (`joystick_monitor.py`) applies a 300ms debounce filter to raw joystick events
+2. The Node.js application (`sensors.js`) applies an additional 300ms debounce filter
+
+You can adjust the debounce time in the `config.js` file by changing the `joystickDebounceTime` value (in milliseconds).
+
 ## Commands
 
 Send commands to the `home/sensehat/command` topic in JSON format:
@@ -500,6 +510,12 @@ python3 joystick_monitor.py
 ```
 
 Press the joystick in different directions and verify that JSON events are printed to the console.
+
+If you're experiencing duplicate joystick events (multiple events triggered by a single press):
+
+1. Increase the debounce time in `config.js` by setting a higher value for `joystickDebounceTime` (default is 300ms)
+2. You can also adjust the Python-level debouncing by modifying the `debounce_time` variable in `joystick_monitor.py`
+3. Make sure you're using the latest version of the sense-hat Python library
 
 ### MQTT Connection Issues
 
