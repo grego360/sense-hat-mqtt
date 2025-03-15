@@ -1,26 +1,41 @@
 # Raspberry Pi Sense HAT MQTT Client
 
-This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assistant (or any other MQTT broker) to display messages and control the LED matrix remotely.
+This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assistant (or any other MQTT broker) to display messages, control the LED matrix remotely, and publish sensor data.
 
-## Version 1.0.7
+## Version 2.0.0
 
-### What's New
+### What's New in 2.0.0
 
-- Added components to the app structure
-- Added support for custom display rotation (0, 90, 180, 270 degrees)
-- Added custom sound support with fallback to system sounds
-- Added volume control functionality
-- Added text-to-speech functionality with Festival engine
-- Improved message display with automatic clearing
-- Enhanced JSON message parsing with better error handling
-- Added unique client ID for more reliable MQTT connections
-- Better error reporting and handling
+- **Complete Sensor Data Integration**: Now publishes data from all Sense HAT V2 sensors:
+  - Temperature sensor
+  - Humidity sensor
+  - Pressure sensor
+  - Accelerometer
+  - Gyroscope
+  - Magnetometer
+  - Joystick input
+- **Enhanced Joystick Support**: Improved joystick event handling with Python integration
+- **Display Improvements**: Fixed rotation issues and added message queue to prevent overlapping text
+- **Command Extensions**: Added new commands for on-demand sensor data and interval adjustment
+- **Improved Error Handling**: Better error recovery and reporting
+- **Code Refactoring**: Modular code structure for easier maintenance and extensions
+
+#### Previous Features
+
+- Custom display rotation (0, 90, 180, 270 degrees)
+- Custom sound support with fallback to system sounds
+- Volume control functionality
+- Text-to-speech functionality with Festival engine
+- Automatic message display clearing
+- Enhanced JSON message parsing
+- Unique client ID for reliable MQTT connections
 
 ## Prerequisites
 
 - Raspberry Pi with Sense HAT V2 attached
-- Node.js installed on your Raspberry Pi
+- Node.js 18+ installed on your Raspberry Pi
 - MQTT broker (such as Home Assistant or Mosquitto)
+- Python 3 with sense-hat library installed
 - Festival text-to-speech engine (for speech functionality)
 
 ## Installation
@@ -28,7 +43,7 @@ This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assista
 1. Clone this repository to your Raspberry Pi:
 
    ```bash
-   git clone https://github.com/yourusername/sense-hat-mqtt.git
+   git clone https://github.com/grego360/sense-hat-mqtt.git
    cd sense-hat-mqtt
    ```
 
@@ -38,7 +53,13 @@ This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assista
    npm install
    ```
 
-3. Install Festival text-to-speech engine (for speech functionality):
+3. Install Python dependencies:
+
+   ```bash
+   pip3 install sense-hat
+   ```
+
+4. Install Festival text-to-speech engine (for speech functionality):
 
    ```bash
    sudo apt-get update
@@ -47,19 +68,36 @@ This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assista
 
 ## Configuration
 
-Edit the `app.js` file to update the MQTT connection details:
+Edit the `config.js` file to update the MQTT connection details and other settings:
 
 ```javascript
-// MQTT connection configuration
-const mqttConfig = {
-  host: "10.1.3.200", // Your MQTT broker IP
-  port: 1883, // Default MQTT port
-  username: "mqtt", // Your MQTT username
-  password: "mqtt123", // Your MQTT password
+module.exports = {
+    mqtt: {
+        host: "10.1.3.200", // Your MQTT broker IP
+        port: 1883, // Default MQTT port
+        username: "mqtt", // Your MQTT username
+        password: "mqtt123", // Your MQTT password
+        topics: {
+            message: "home/sensehat/message",
+            command: "home/sensehat/command",
+            sensors: "home/sensehat/sensors",
+            joystick: "home/sensehat/joystick"
+        }
+    },
+    display: {
+        // Display settings...
+        defaultColor: [255, 255, 255],
+        defaultRotation: 0
+    },
+    audio: {
+        // Audio settings...
+        defaultVolume: 80
+    },
+    sensors: {
+        publishInterval: 30000, // Publish sensor data every 30 seconds
+        joystickEnabled: true // Enable joystick monitoring
+    }
 };
-
-// The client ID is automatically generated for uniqueness
-// clientId: 'rpi-sense-hat-' + Math.random().toString(16).substring(2, 8)
 ```
 
 ## Running the Application
@@ -72,7 +110,16 @@ npm start
 
 The application will connect to your MQTT broker and subscribe to the `home/sensehat/message` topic.
 
-## MQTT Message Format
+## MQTT Topics
+
+The application uses the following MQTT topics:
+
+- `home/sensehat/message` - Send messages to display on the Sense HAT
+- `home/sensehat/command` - Send commands to control the device
+- `home/sensehat/sensors` - Receive sensor data from the Sense HAT
+- `home/sensehat/joystick` - Receive joystick events from the Sense HAT
+
+## Message Format
 
 Send messages to the `home/sensehat/message` topic in JSON format:
 
@@ -80,15 +127,24 @@ Send messages to the `home/sensehat/message` topic in JSON format:
 
 ```json
 {
-  "message": "Hello World!"
+  "text": "Hello World!",
+  "color": [255, 0, 0],
+  "rotation": 0,
+  "speed": 0.1
 }
 ```
+
+All fields except `text` are optional. Default values are:
+
+- `color`: [255, 255, 255] (white)
+- `rotation`: 0 (degrees, can be 0, 90, 180, or 270)
+- `speed`: 0.1 (scrolling speed, lower is faster)
 
 ### Text with Speech
 
 ```json
 {
-  "message": "Hello World!",
+  "text": "Hello World!",
   "speak": true
 }
 ```
@@ -99,7 +155,7 @@ When the `speak` parameter is set to `true`, the message will be spoken aloud us
 
 ```json
 {
-  "message": "Hello World!",
+  "text": "Hello World!",
   "rotation": 90
 }
 ```
@@ -110,7 +166,7 @@ The `rotation` parameter accepts values of 0, 90, 180, or 270 degrees to control
 
 ```json
 {
-  "message": "Hello World!",
+  "text": "Hello World!",
   "sound": "bell"
 }
 ```
@@ -208,16 +264,145 @@ The `volume` parameter accepts values from 0-100 to set the system volume level.
 }
 ```
 
+## Sensor Data Format
+
+The application publishes sensor data to the `home/sensehat/sensors` topic in the following JSON format:
+
+```json
+{
+  "temperature": 24.57,
+  "humidity": 45.32,
+  "pressure": 1013.25,
+  "orientation": {
+    "roll": 0.23,
+    "pitch": 1.56,
+    "yaw": 178.34
+  },
+  "accelerometer": {
+    "x": 0.0012,
+    "y": 0.0034,
+    "z": 0.9987
+  },
+  "gyroscope": {
+    "x": 0.0023,
+    "y": 0.0045,
+    "z": 0.0067
+  },
+  "magnetometer": {
+    "x": 23.45,
+    "y": 34.56,
+    "z": 45.67
+  },
+  "timestamp": "2025-03-15T11:45:30.123Z"
+}
+```
+
+## Joystick Event Format
+
+The application publishes joystick events to the `home/sensehat/joystick` topic in the following JSON format:
+
+```json
+{
+  "action": "pressed",
+  "direction": "up",
+  "timestamp": "2025-03-15T11:45:30.123Z"
+}
+```
+
+Possible values for `action` are: `pressed`, `released`, `held`
+
+Possible values for `direction` are: `up`, `down`, `left`, `right`, `middle`
+
+## Commands
+
+Send commands to the `home/sensehat/command` topic in JSON format:
+
+### Clear Display
+
+```json
+{
+  "action": "clear"
+}
+```
+
+### Play Sound
+
+```json
+{
+  "action": "sound",
+  "sound": "beep"
+}
+```
+
+Built-in sounds: `beep`, `alert`, `confirm`
+
+### Speak Text
+
+```json
+{
+  "action": "speak",
+  "text": "Hello, I am your Raspberry Pi"
+}
+```
+
+### Set Volume
+
+```json
+{
+  "action": "volume",
+  "level": 80
+}
+```
+
+Volume level should be between 0 and 100.
+
+### Get Sensor Data On Demand
+
+```json
+{
+  "action": "get_sensors"
+}
+```
+
+### Change Sensor Publishing Interval
+
+```json
+{
+  "action": "set_interval",
+  "interval": 60000
+}
+```
+
 ## Home Assistant Integration
 
 Add the following to your Home Assistant `configuration.yaml`:
 
 ```yaml
 mqtt:
-  broker: 10.1.3.200 # Your MQTT broker IP
-  port: 1883
-  username: mqtt
-  password: mqtt123
+  sensor:
+    - name: "SenseHat Message"
+      state_topic: "home/sensehat/message"
+      value_template: "{{ value_json.text }}"
+      
+    - name: "SenseHat Temperature"
+      state_topic: "home/sensehat/sensors"
+      value_template: "{{ value_json.temperature }}"
+      unit_of_measurement: "°C"
+      device_class: "temperature"
+      
+    - name: "SenseHat Humidity"
+      state_topic: "home/sensehat/sensors"
+      value_template: "{{ value_json.humidity }}"
+      unit_of_measurement: "%"
+      device_class: "humidity"
+      
+    - name: "SenseHat Pressure"
+      state_topic: "home/sensehat/sensors"
+      value_template: "{{ value_json.pressure }}"
+      unit_of_measurement: "hPa"
+      device_class: "pressure"
+      
+    # Add more sensors as needed for accelerometer, gyroscope, etc.
 
 input_text:
   sensehat_message:
@@ -233,7 +418,19 @@ automation:
       service: mqtt.publish
       data:
         topic: "home/sensehat/message"
-        payload_template: '{"message": "{{ states.input_text.sensehat_message.state }}"}'
+        payload_template: '{"text": "{{ states.input_text.sensehat_message.state }}"}'
+        
+  - alias: "React to SenseHat Joystick"
+    trigger:
+      platform: mqtt
+      topic: home/sensehat/joystick
+    condition:
+      template: '{{ trigger.payload_json.action == "pressed" }}'
+    action:
+      service: notify.mobile_app
+      data:
+        title: "Joystick Event"
+        message: "Direction: {{ trigger.payload_json.direction }}"
 ```
 
 ## Running as a Service
@@ -254,12 +451,12 @@ To run the application as a systemd service that starts automatically on boot:
    After=network.target
 
    [Service]
-   ExecStart=/usr/bin/node /home/strot/sense-hat-mqtt/app.js
-   WorkingDirectory=/home/strot/sense-hat-mqtt
+   ExecStart=/usr/bin/node /home/pi/sense-hat-mqtt/app.js
+   WorkingDirectory=/home/pi/sense-hat-mqtt
    StandardOutput=inherit
    StandardError=inherit
    Restart=always
-   User=strot
+   User=pi
 
    [Install]
    WantedBy=multi-user.target
@@ -280,19 +477,42 @@ To run the application as a systemd service that starts automatically on boot:
 
 ## Troubleshooting
 
-- **Permission issues**: Add your user to the required groups:
+### Python Sensor Access
 
-  ```bash
-  sudo usermod -a -G i2c,gpio,spi strot
-  ```
+If you encounter issues with sensor readings, ensure the Python sense-hat library is correctly installed:
 
-- **MQTT connection errors**: Verify your MQTT broker credentials and ensure the broker is running
+```bash
+pip3 install --upgrade sense-hat
+```
 
-- **Service logs**: Check the application logs if you encounter issues:
+Also make sure your user has the necessary permissions to access the Sense HAT hardware:
 
-  ```bash
-  sudo journalctl -u sense-hat-mqtt.service
-  ```
+```bash
+sudo usermod -a -G i2c,input,gpio $USER
+```
+
+### Joystick Issues
+
+If joystick events aren't being detected, check that the Python joystick monitor is running correctly. You can test it manually:
+
+```bash
+python3 joystick_monitor.py
+```
+
+Press the joystick in different directions and verify that JSON events are printed to the console.
+
+### MQTT Connection Issues
+
+- Verify your MQTT broker credentials and ensure the broker is running
+- Check network connectivity between your Raspberry Pi and the MQTT broker
+
+### Service Logs
+
+Check the application logs if you encounter issues:
+
+```bash
+sudo journalctl -u sense-hat-mqtt.service
+```
 
 ## License
 
