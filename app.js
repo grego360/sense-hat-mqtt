@@ -1,3 +1,5 @@
+const { spawn } = require('child_process');
+
 // Main application entry point
 const config = require('./config');
 
@@ -12,6 +14,9 @@ const mqttClient = require('./lib/mqtt-client').createClient({
     display,
     audio
 });
+
+console.log('Starting Python joystick monitor...');
+const joystickProcess = spawn('python3', ['joystick_monitor.py']);
 
 // Test MQTT publishing function
 function testMqttPublish() {
