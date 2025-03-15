@@ -14,7 +14,7 @@ const mqttClient = require('./lib/mqtt-client').createClient({
 });
 
 // Initialize sensors after MQTT client is created
-const sensors = require('./lib/sensors').init(display, mqttClient);
+const sensors = require('./lib/sensor').init(display, mqttClient);
 
 // Set up joystick events if supported by the Sense HAT library
 if (typeof display.on === 'function') {
