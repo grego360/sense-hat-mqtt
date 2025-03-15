@@ -169,6 +169,41 @@ function publishJoystickEvent(event) {
     }
 }
 
+// Modify the joystick event handling part:
+joystickProcess.stdout.on('data', (data) => {
+    const outputLines = data.toString().trim().split('\n');
+
+    outputLines.forEach(line => {
+        try {
+            // Skip non-JSON lines like "Joystick monitor started"
+            if (!line.startsWith('{')) {
+                console.log('Python output:', line);
+                return;
+            }
+
+            // Parse the JSON
+            const event = JSON.parse(line);
+
+            // Only process actual event data
+            if (event.action && event.direction) {
+                console.log('Joystick event from Python:', event);
+
+                // Publish to MQTT
+                mqttClient.publish(config.mqtt.topics.joystick, JSON.stringify(event));
+
+                // Flash the display
+                if (typeof display.setBackgroundColor === 'function') {
+                    display.setBackgroundColor([0, 255, 0]);
+                    setTimeout(() => display.clearDisplay(), 200);
+                }
+            }
+        } catch (err) {
+            console.log('Error processing Python output:', err.message);
+            console.log('Raw output:', line);
+        }
+    });
+});
+
 // Handle process termination
 process.on('SIGINT', () => {
     console.log('Shutting down...');

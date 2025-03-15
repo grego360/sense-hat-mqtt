@@ -3,6 +3,7 @@ from sense_hat import SenseHat
 import json
 import time
 import sys
+import datetime
 
 sense = SenseHat()
 
@@ -14,11 +15,14 @@ print("Joystick monitor started")
 try:
     while True:
         for event in sense.stick.get_events():
+            # Get current timestamp in ISO format
+            timestamp = datetime.datetime.now().isoformat()
+            
             # Convert event to JSON format
             event_data = {
                 "action": event.action,
                 "direction": event.direction,
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S.%fZ", time.gmtime())
+                "timestamp": timestamp
             }
             
             # Output as JSON for Node.js to read
