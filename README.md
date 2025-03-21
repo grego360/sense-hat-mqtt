@@ -33,7 +33,7 @@ This Node.js application connects your Raspberry Pi Sense HAT V2 to Home Assista
 ## Prerequisites
 
 - Raspberry Pi with Sense HAT V2 attached
-- Node.js 18+ installed on your Raspberry Pi
+- Node.js 18-22 installed on your Raspberry Pi
 - MQTT broker (such as Home Assistant or Mosquitto)
 - Python 3 with sense-hat library installed
 - Festival text-to-speech engine (for speech functionality)
@@ -110,6 +110,47 @@ npm start
 ```
 
 The application will connect to your MQTT broker and subscribe to the `home/sensehat/message` topic.
+
+## Node.js v22 Compatibility
+
+If you're running Node.js v22 on your Raspberry Pi, you might encounter native module compatibility issues. This is because some native modules need to be rebuilt for the specific Node.js version you're using.
+
+### Fixing Native Module Errors
+
+If you see errors like `Error: The module was compiled against a different Node.js version using NODE_MODULE_VERSION XXX`, follow these steps:
+
+1. Use the provided rebuild script:
+
+   ```bash
+   # Make the script executable if needed
+   chmod +x rebuild-native-modules.sh
+   
+   # Run the rebuild script
+   ./rebuild-native-modules.sh
+   ```
+
+2. Or manually rebuild the modules:
+
+   ```bash
+   # Remove existing node_modules
+   rm -rf node_modules
+   
+   # Clear npm cache
+   npm cache clean --force
+   
+   # Reinstall with forced rebuild
+   npm install --build-from-source
+   ```
+
+3. If you still encounter issues, you may need to install build tools:
+
+   ```bash
+   sudo apt-get update
+   sudo apt-get install -y build-essential
+   npm install -g node-gyp
+   ```
+
+After rebuilding the modules, restart your application.
 
 ## MQTT Topics
 
